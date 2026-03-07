@@ -1,0 +1,25 @@
+{
+  "name": "MediFicha",
+  "short_name": "MediFicha",
+  "description": "Fichas pediátricas",
+  "start_url": "/Medificha/MediFicha_v70_pwa.html",
+  "scope": "/Medificha/",
+  "display": "standalone",
+  "background_color": "#1c64bd",
+  "theme_color": "#1c64bd",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/Medificha/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Medificha/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
