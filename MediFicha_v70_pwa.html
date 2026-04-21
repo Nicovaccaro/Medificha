@@ -1348,15 +1348,32 @@ function dropboxHandleRedirect(){
 // ── Connect & load ─────────────────────────────────────────────
 async function dropboxConnect(token){
   _dbxToken = token;
-  // Get user info
+  // Validar token con get_current_account antes de hacer nada
   try{
     var r = await fetch('https://api.dropboxapi.com/2/users/get_current_account',{
       method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
       body:'null'
     });
+    if(r.status === 401){
+      // Token vencido — limpiar silenciosamente sin mensajes de error
+      try{localStorage.removeItem('mf_dbx_token');}catch(e){}
+      _dbxToken = null;
+      document.getElementById('btn-dbx').textContent = 'Conectar Dropbox';
+      document.getElementById('btn-dbx').onclick = dropboxAuth;
+      document.getElementById('dbx-user-info').textContent = '';
+      document.getElementById('sync-folder-info').textContent = 'Sesión expirada — volvé a vincular';
+      setSyncDot('');
+      return;
+    }
+    if(!r.ok) throw new Error('HTTP '+r.status);
     var u = await r.json();
     if(u.name) document.getElementById('dbx-user-info').textContent = u.name.display_name || '';
-  }catch(e){}
+  }catch(e){
+    // Error de red u otro — dejar estado neutro sin alert
+    document.getElementById('sync-folder-info').textContent = 'Sin conexión a Dropbox';
+    setSyncDot('err');
+    return;
+  }
 
   document.getElementById('btn-dbx').textContent = 'Sincronizado';
   document.getElementById('btn-dbx').onclick = dropboxLogout;
@@ -1383,8 +1400,19 @@ async function dropboxLoad(){
       return;
     }
     if(!r.ok){
+      if(r.status === 401){
+        // Token vencido o inválido — limpiar silenciosamente y volver a estado desconectado
+        try{localStorage.removeItem('mf_dbx_token');}catch(e){}
+        _dbxToken = null;
+        document.getElementById('btn-dbx').textContent = 'Conectar Dropbox';
+        document.getElementById('btn-dbx').onclick = dropboxAuth;
+        document.getElementById('dbx-user-info').textContent = '';
+        document.getElementById('sync-folder-info').textContent = 'Sesión expirada — volvé a vincular';
+        setSyncDot('');
+        return;
+      }
       var errBody = await r.text();
-      alert('Error HTTP '+r.status+': '+errBody.substring(0,200));
+      toast('Error Dropbox HTTP '+r.status);
       throw new Error('HTTP '+r.status);
     }
     var data = await r.json();
