@@ -328,7 +328,7 @@
 </div>
 
 
-<div id="pin-screen">
+<div id="pin-screen" class="hidden">
   <div id="pin-logo">🏥 MediFicha</div>
   <div id="pin-sub">Fichas pediátricas</div>
   <div id="pin-dots">
@@ -1845,9 +1845,9 @@ function pinSetup(){
   document.getElementById('pin-error').textContent = '';
 }
 
-// Start with PIN screen - DON'T call initSync on load
+// PIN disabled - call initSync directly on load
 window.addEventListener('DOMContentLoaded', function(){
-  // Show PIN screen, initSync will be called after correct PIN
+  initSync();
 });
 
 </script>
