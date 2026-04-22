@@ -136,7 +136,8 @@
     thead th{color:#fff;padding:.6rem .85rem;text-align:left;font-weight:600;
               font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;
               overflow:hidden}
-    tbody tr{border-bottom:1px solid var(--line);transition:background .12s}
+    tbody tr{border-bottom:1px solid var(--line);transition:background .12s;height:42px}
+    tbody tr td{max-height:42px}
     tbody tr:hover{background:var(--teal-l)}
     tbody td{padding:.52rem .85rem;vertical-align:middle;overflow:hidden}
     tbody tr:nth-child(even){background:#f8fcfd}
@@ -146,7 +147,8 @@
     .td-num{width:120px;white-space:nowrap;padding:2px 3px 2px 2px;box-sizing:border-box;overflow:visible;}
     .td-vac{padding-left:2px;padding-right:.3rem;}
     .td-supl{padding-left:2px;padding-right:.3rem;}
-    .td-obs{min-width:220px;word-break:break-word;font-size:.82rem;color:var(--dark)}
+    .td-obs{min-width:220px;max-width:280px;font-size:.82rem;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .td-obs:hover{white-space:normal;word-break:break-word;}
     .td-act{width:44px;text-align:center}
     .tag{display:inline-block;padding:.17rem .48rem;border-radius:5px;font-size:.74rem;font-weight:600}
     .tag-teal{background:var(--teal-l);color:var(--teal)}
