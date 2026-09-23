@@ -10,7 +10,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192-1.png">
 <link rel="icon" type="image/png" sizes="512x512" href="./icon-512-1.png">
 <link rel="apple-touch-icon" href="./icon-192-1.png">
-<title>MediFicha v7.4.5</title>
+<title>MediFicha v7.4.6</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
     :root{--teal:#0a7d8c;--teal-l:#d6f0f3;--teal-m:#4db8c4;--amber:#e8a020;
@@ -606,7 +606,7 @@
   </div>
 </div>
 
-<footer>MediFicha v7.4.5 &copy; 2026 &middot; Uso m&eacute;dico confidencial</footer>
+<footer>MediFicha v7.4.6 &copy; 2026 &middot; Uso m&eacute;dico confidencial</footer>
 
 <div id="sync-bar">
   <span id="sync-date"></span>
@@ -1839,6 +1839,7 @@ function dbFromImport(data){
 var DBX_APP_KEY   = 'n5b6fbw649rq29s';
 var DBX_FILE_PATH = '/Consultorio/MediFicha_datos.json';
 var _dbxToken     = null;
+var _loading      = false;
 var _syncTimer    = null;
 var _syncPending  = false;
 
@@ -1909,6 +1910,7 @@ async function dropboxConnect(token){
 
 async function dropboxLoad(){
   if(!_dbxToken) return;
+  _loading = true;
   setSyncDot('busy');
   document.getElementById('sync-folder-info').textContent = 'Cargando...';
   try{
@@ -1934,6 +1936,7 @@ async function dropboxLoad(){
         document.getElementById('dbx-user-info').textContent = '';
         document.getElementById('sync-folder-info').textContent = 'Sesión expirada — volvé a vincular';
         setSyncDot('');
+        _loading = false;
         return;
       }
       var errBody = await r.text();
@@ -1947,6 +1950,7 @@ async function dropboxLoad(){
       document.getElementById('sync-folder-info').textContent = 'Err import: '+e1.message;
       setSyncDot('err');
       toast('Import: '+e1.message);
+      _loading = false;
       return;
     }
     try{ rebuildFromStorage(); }catch(e2){
@@ -1954,16 +1958,19 @@ async function dropboxLoad(){
       document.getElementById('sync-folder-info').textContent = 'Err rebuild: '+e2.message;
       setSyncDot('err');
       toast('Rebuild: '+e2.message);
+      _loading = false;
       return;
     }
     setSyncDot('ok');
     document.getElementById('sync-folder-info').textContent = 'Cargado OK ('+n+')';
     toast('Dropbox: ' + n + ' registros cargados');
+    _loading = false;
   }catch(e){
     console.error('dropboxLoad error:',e);
     setSyncDot('err');
     document.getElementById('sync-folder-info').textContent = 'Err: '+e.message;
     toast('Error Dropbox: ' + e.message);
+    _loading = false;
   }
 }
 
@@ -1976,6 +1983,8 @@ function autoSyncDebounced(){
 
 async function autoSync(){
   if(!_dbxToken){ _syncPending=false; return; }
+  if(_loading){ return; }  // No sobrescribir Dropbox mientras carga
+  if(!_DB || Object.keys(_DB).length === 0){ return; }  // No subir DB vacío
   setSyncDot('busy');
   try{
     var out  = dbToExport();
