@@ -1,4 +1,4 @@
-const CACHE = 'medificha-v3';
+const CACHE = 'medificha-v4';
 const FILES = [
   './MediFicha_v70_pwa.html',
   './manifest.json',
@@ -20,7 +20,6 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Para HTML, manifest e iconos: red primero, caché como fallback
   const url = e.request.url;
   if (url.endsWith('.html') || url.includes('manifest.json') || url.includes('icon-')) {
     e.respondWith(
@@ -32,7 +31,6 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  // Caché primero para el resto
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request))
   );
