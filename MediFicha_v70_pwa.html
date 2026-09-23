@@ -121,8 +121,8 @@
     .sel-clinical:focus{outline:none;border-color:var(--teal)}
 
     /* TABLE — key layout changes */
-    .table-wrapper{overflow-x:auto;border-radius:8px;border:1.5px solid var(--line)}
-    table{width:100%;border-collapse:collapse;font-size:.84rem;table-layout:fixed}
+    .table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1.5px solid var(--line);scroll-behavior:smooth;}
+    table{width:max-content;min-width:100%;border-collapse:collapse;font-size:.84rem;}
     /* Column widths — more space to Obs */
     .th-fecha{width:120px}
     .th-edad{width:95px}
@@ -151,7 +151,7 @@
     .td-supl{width:15mm;padding-left:2px;padding-right:.3rem;}
     .sel-supl{width:calc(15mm - 7px) !important;min-width:0 !important;
                max-width:100%;box-sizing:border-box;padding:.33rem .15rem;}
-    .td-obs{min-width:220px;word-break:break-word;font-size:.82rem;color:var(--dark)}
+    .td-obs{min-width:300px;white-space:nowrap;font-size:.82rem;color:var(--dark);}
     .td-act{width:44px;text-align:center}
     .tag{display:inline-block;padding:.17rem .48rem;border-radius:5px;font-size:.74rem;font-weight:600}
     .tag-teal{background:var(--teal-l);color:var(--teal)}
