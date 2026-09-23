@@ -10,7 +10,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192-1.png">
 <link rel="icon" type="image/png" sizes="512x512" href="./icon-512-1.png">
 <link rel="apple-touch-icon" href="./icon-192-1.png">
-<title>MediFicha v7.4.3</title>
+<title>MediFicha v7.4.4</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
     :root{--teal:#0a7d8c;--teal-l:#d6f0f3;--teal-m:#4db8c4;--amber:#e8a020;
@@ -606,7 +606,7 @@
   </div>
 </div>
 
-<footer>MediFicha v7.4.3 &copy; 2026 &middot; Uso m&eacute;dico confidencial</footer>
+<footer>MediFicha v7.4.4 &copy; 2026 &middot; Uso m&eacute;dico confidencial</footer>
 
 <div id="sync-bar">
   <span id="sync-date"></span>
@@ -1924,14 +1924,28 @@ async function dropboxLoad(){
       throw new Error('HTTP '+r.status);
     }
     var data = await r.json();
-    var n = dbFromImport(data);
-    rebuildFromStorage();
+    var n = 0;
+    try{ n = dbFromImport(data); }catch(e1){
+      console.error('dbFromImport error:',e1);
+      document.getElementById('sync-folder-info').textContent = 'Err import: '+e1.message;
+      setSyncDot('err');
+      toast('Import: '+e1.message);
+      return;
+    }
+    try{ rebuildFromStorage(); }catch(e2){
+      console.error('rebuildFromStorage error:',e2);
+      document.getElementById('sync-folder-info').textContent = 'Err rebuild: '+e2.message;
+      setSyncDot('err');
+      toast('Rebuild: '+e2.message);
+      return;
+    }
     setSyncDot('ok');
-    document.getElementById('sync-folder-info').textContent = 'Cargado OK';
+    document.getElementById('sync-folder-info').textContent = 'Cargado OK ('+n+')';
     toast('Dropbox: ' + n + ' registros cargados');
   }catch(e){
+    console.error('dropboxLoad error:',e);
     setSyncDot('err');
-    document.getElementById('sync-folder-info').textContent = 'Error al cargar';
+    document.getElementById('sync-folder-info').textContent = 'Err: '+e.message;
     toast('Error Dropbox: ' + e.message);
   }
 }
