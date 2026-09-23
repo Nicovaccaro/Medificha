@@ -1,4 +1,4 @@
-const CACHE = 'medificha-v4';
+const CACHE = 'medificha-v5';
 const FILES = [
   './MediFicha_v70_pwa.html',
   './manifest.json',
