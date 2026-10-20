@@ -10,7 +10,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192-1.png">
 <link rel="icon" type="image/png" sizes="512x512" href="./icon-512-1.png">
 <link rel="apple-touch-icon" href="./icon-192-1.png">
-<title>MediFicha v7.4.6</title>
+<title>MediFicha v7.4.7</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
     :root{--teal:#0a7d8c;--teal-l:#d6f0f3;--teal-m:#4db8c4;--amber:#e8a020;
@@ -606,7 +606,7 @@
   </div>
 </div>
 
-<footer>MediFicha v7.4.6 &copy; 2026 &middot; Uso m&eacute;dico confidencial</footer>
+<footer>MediFicha v7.4.7 &copy; 2026 &middot; Uso m&eacute;dico confidencial</footer>
 
 <div id="sync-bar">
   <span id="sync-date"></span>
@@ -663,26 +663,30 @@ function dbToExport(){
   return {version:1,ts:new Date().toISOString(),keys:keys};
 }
 function dbFromImport(data){
-  if(!data||!data.keys) return 0;
-  var n=0;
+  if(!data || !data.keys || typeof data.keys !== 'object' || Array.isArray(data.keys))
+    throw new Error('JSON incompatible: falta el objeto keys de MediFicha');
+  var incoming = {};
   Object.keys(data.keys).forEach(function(k){
-    try{
-      var val=JSON.parse(data.keys[k]);
-      // Si es un _fil y no tiene campo id, se lo agregamos desde la key
-      if(k.endsWith('_fil') && val && typeof val==='object' && !val.id){
-        var pid=k.replace(/^mf_/,'').replace(/_fil$/,'');
-        val.id=pid;
-      }
-      _DB[k]=val; n++;
-    }catch(e){}
+    if(!/^mf_/.test(k)) return;
+    var raw = data.keys[k];
+    var val = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    var match = /^mf_(.+)_fil$/.exec(k);
+    if(match){
+      if(!val || typeof val !== 'object' || Array.isArray(val))
+        throw new Error('Ficha inválida: '+k);
+      val.id = match[1];
+    }
+    incoming[k] = val;
   });
-  // Actualizar nextId para evitar colisiones con IDs tipo N####
-  var newPids=_DB['mf___newpids']||[];
-  newPids.forEach(function(pid){
-    var m=String(pid).match(/^N(\d+)$/);
-    if(m && parseInt(m[1])>=nextId) nextId=parseInt(m[1])+1;
+  var keys = Object.keys(incoming);
+  if(!keys.some(function(k){return /^mf_(.+)_fil$/.test(k);}))
+    throw new Error('El JSON no contiene fichas de pacientes');
+  keys.forEach(function(k){
+    _DB[k] = incoming[k];
+    var m = /^mf_N(\d+)_fil$/.exec(k);
+    if(m) nextId = Math.max(nextId, Number(m[1])+1);
   });
-  return n;
+  return keys.length;
 }
 
 // ── RESTORE SAVED DATA ON LOAD ────────────────────────────────
@@ -1827,14 +1831,7 @@ function dbToExport(){
   return {version:1,ts:new Date().toISOString(),keys:keys};
 }
 
-function dbFromImport(data){
-  if(!data||!data.keys) return 0;
-  var n=0;
-  Object.keys(data.keys).forEach(function(k){
-    try{ _DB[k]=JSON.parse(data.keys[k]); n++; }catch(e){}
-  });
-  return n;
-}
+// dbFromImport se define una sola vez, junto al almacenamiento.
 
 var DBX_APP_KEY   = 'n5b6fbw649rq29s';
 var DBX_FILE_PATH = '/Consultorio/MediFicha_datos.json';
@@ -2078,6 +2075,18 @@ function showImportHint(){
 }
 
 function rebuildFromStorage() {
+  // Reconstruir también el índice de búsqueda con los datos actuales.
+  _currentPid = null;
+  PATIENTS = Object.keys(_DB).filter(function(k){return /^mf_(.+)_fil$/.test(k);}).map(function(k){
+    var pid = /^mf_(.+)_fil$/.exec(k)[1];
+    var p = _DB[k];
+    p.id = pid;
+    var label = ((p.apellido||'')+' '+(p.nombre||'')).trim() || ('Paciente '+pid);
+    var search = [label,p.dni,p.carnet,p.madre,p.padre,p.tel_madre,p.tel_padre,p.tel_fijo,
+      normalizePhone(p.tel_madre||''),normalizePhone(p.tel_padre||''),normalizePhone(p.tel_fijo||'')]
+      .filter(Boolean).join(' ').toLowerCase();
+    return {pid:pid,label:label,search:search,fnac:p.fnac||''};
+  });
   var list = document.getElementById('patientList');
   list.querySelectorAll('.card').forEach(function(c){ c.remove(); });
   var built = 0;
