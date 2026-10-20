@@ -10,7 +10,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192-1.png">
 <link rel="icon" type="image/png" sizes="512x512" href="./icon-512-1.png">
 <link rel="apple-touch-icon" href="./icon-192-1.png">
-<title>MediFicha v7.4.7</title>
+<title>MediFicha v7.4.7 · recuperación</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
     :root{--teal:#0a7d8c;--teal-l:#d6f0f3;--teal-m:#4db8c4;--amber:#e8a020;
@@ -606,7 +606,7 @@
   </div>
 </div>
 
-<footer>MediFicha v7.4.7 &copy; 2026 &middot; Uso m&eacute;dico confidencial</footer>
+<footer>MediFicha v7.4.7 · recuperación &copy; 2026 &middot; Uso m&eacute;dico confidencial</footer>
 
 <div id="sync-bar">
   <span id="sync-date"></span>
@@ -662,7 +662,41 @@ function dbToExport(){
   Object.keys(_DB).forEach(function(k){ keys[k]=JSON.stringify(_DB[k]); });
   return {version:1,ts:new Date().toISOString(),keys:keys};
 }
+// Compatible con el respaldo compactado MediFicha.compact.2.
+function expandCompactBackup(data){
+  if(!data || data.format !== 'MediFicha.compact.2') return data;
+  if(!Array.isArray(data.schemas) || !Array.isArray(data.strings) || !data.keys)
+    throw new Error('Respaldo compacto incompleto');
+  function expand(v){
+    if(Array.isArray(v)){
+      if(v[0] === -3){
+        if(!Number.isInteger(v[1]) || v[1]<0 || v[1]>=data.strings.length) throw new Error('Índice de texto inválido');
+        return data.strings[v[1]];
+      }
+      if(v[0] === -2) return v.slice(1).map(expand);
+      if(v[0] === -1){
+        var fields=data.schemas[v[1]];
+        if(!Array.isArray(fields)) throw new Error('Esquema de ficha inválido');
+        var obj={};
+        fields.forEach(function(k,i){ if(i+2<v.length) obj[k]=expand(v[i+2]); });
+        return obj;
+      }
+      return v.map(expand);
+    }
+    if(v && typeof v==='object'){
+      var o={}; Object.keys(v).forEach(function(k){o[k]=expand(v[k]);}); return o;
+    }
+    return v;
+  }
+  var keys={};
+  Object.keys(data.keys).forEach(function(k){
+    var raw=data.keys[k];
+    keys[k]=typeof raw==='string' ? raw : expand(raw);
+  });
+  return {version:1,ts:data.ts,keys:keys};
+}
 function dbFromImport(data){
+  data=expandCompactBackup(data);
   if(!data || !data.keys || typeof data.keys !== 'object' || Array.isArray(data.keys))
     throw new Error('JSON incompatible: falta el objeto keys de MediFicha');
   var incoming = {};
@@ -1959,8 +1993,8 @@ async function dropboxLoad(){
       return;
     }
     setSyncDot('ok');
-    document.getElementById('sync-folder-info').textContent = 'Cargado OK ('+n+')';
-    toast('Dropbox: ' + n + ' registros cargados');
+    document.getElementById('sync-folder-info').textContent = 'Lectura OK ('+n+') · solo lectura';
+    toast('Dropbox: ' + n + ' registros cargados · solo lectura');
     _loading = false;
   }catch(e){
     console.error('dropboxLoad error:',e);
@@ -1979,6 +2013,9 @@ function autoSyncDebounced(){
 }
 
 async function autoSync(){
+  // MODO SEGURO: impedir sobrescrituras hasta validar la restauración.
+  _syncPending=false;
+  return;
   if(!_dbxToken){ _syncPending=false; return; }
   if(_loading){ return; }  // No sobrescribir Dropbox mientras carga
   if(!_DB || Object.keys(_DB).length === 0){ return; }  // No subir DB vacío
@@ -3325,9 +3362,7 @@ function exportFichaPdf(pid){
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').catch(function(){});
 }
-window.addEventListener('DOMContentLoaded', function(){
-  initSync();
-});
+// initSync ya se registra una vez más arriba.
 
 </script>
 
